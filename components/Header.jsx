@@ -2,18 +2,33 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
+const AUTH_LOGIN_URL = process.env.NEXT_PUBLIC_AUTH_LOGIN_URL ?? 'https://auth.leandrosouza.info/login'
+const AUTH_PROFILE_URL = process.env.NEXT_PUBLIC_AUTH_PROFILE_URL ?? 'https://auth.leandrosouza.info/perfil'
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pc.leandrosouza.info'
+
 const NAV_LINKS = [
-  { href: '/#overview', label: 'Visão geral' },
   { href: '/#modules', label: 'Módulos' },
-  { href: '/#technology', label: 'Tecnologia' },
-  { href: '/#security', label: 'Segurança' },
+  { href: '/#status', label: 'Status' },
+  { href: '/#roadmap', label: 'Roadmap' },
 ]
+
+function buildLoginUrl(pathname) {
+  try {
+    const next = new URL(pathname, SITE_URL).toString()
+    const url = new URL(AUTH_LOGIN_URL)
+    url.searchParams.set('next', next)
+    return url.toString()
+  } catch {
+    return AUTH_LOGIN_URL
+  }
+}
 
 export default function Header() {
   const router = useRouter()
+  const pathname = usePathname()
   const supabase = useMemo(() => createClient(), [])
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -25,7 +40,6 @@ export default function Header() {
 
     async function loadSession() {
       const { data: { user: currentUser } } = await supabase.auth.getUser()
-
       if (isMounted) {
         setUser(currentUser)
         setLoading(false)
@@ -51,7 +65,6 @@ export default function Header() {
 
   useEffect(() => {
     document.body.style.overflow = mobileMenuOpen ? 'hidden' : ''
-
     return () => {
       document.body.style.overflow = ''
     }
@@ -69,6 +82,8 @@ export default function Header() {
     router.push('/')
     router.refresh()
   }
+
+  const loginUrl = buildLoginUrl(pathname)
 
   return (
     <header className="sticky top-0 z-50 bg-white shadow-md relative">
@@ -97,12 +112,12 @@ export default function Header() {
               <span className="text-sm text-gray-400">...</span>
             ) : user ? (
               <>
-                <Link
-                  href="/perfil"
+                <a
+                  href={AUTH_PROFILE_URL}
                   className="text-sm text-gray-700 hover:text-blue-600 transition-colors font-medium"
                 >
                   Meu perfil
-                </Link>
+                </a>
                 <span className="text-sm text-gray-600 max-w-[180px] truncate">
                   {user.email}
                 </span>
@@ -116,31 +131,31 @@ export default function Header() {
                 </button>
               </>
             ) : (
-              <Link
-                href="/login"
+              <a
+                href={loginUrl}
                 className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
               >
                 Entrar
-              </Link>
+              </a>
             )}
           </div>
 
           <div className="md:hidden flex items-center gap-2">
             {!loading && !user && (
-              <Link
-                href="/login"
+              <a
+                href={loginUrl}
                 className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
               >
                 Entrar
-              </Link>
+              </a>
             )}
             {!loading && user && (
-              <Link
-                href="/perfil"
+              <a
+                href={AUTH_PROFILE_URL}
                 className="px-3 py-2 text-gray-700 hover:text-blue-600 transition-colors text-sm font-medium"
               >
                 Perfil
-              </Link>
+              </a>
             )}
             <button
               type="button"
@@ -196,13 +211,13 @@ export default function Header() {
                     <p className="px-4 py-2 text-sm text-gray-500 truncate">
                       {user.email}
                     </p>
-                    <Link
-                      href="/perfil"
+                    <a
+                      href={AUTH_PROFILE_URL}
                       onClick={closeMobileMenu}
                       className="block px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-blue-600 font-medium transition-colors"
                     >
                       Meu perfil
-                    </Link>
+                    </a>
                     <button
                       type="button"
                       onClick={handleSignOut}
@@ -213,13 +228,13 @@ export default function Header() {
                     </button>
                   </>
                 ) : (
-                  <Link
-                    href="/login"
+                  <a
+                    href={loginUrl}
                     onClick={closeMobileMenu}
                     className="block px-4 py-3 rounded-lg bg-blue-600 text-white text-center font-medium hover:bg-blue-700 transition-colors"
                   >
                     Entrar
-                  </Link>
+                  </a>
                 )}
               </div>
             </div>

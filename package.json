@@ -1,21 +1,18 @@
 {
-  "name": "nextjs-landing",
+  "name": "pc-app",
   "version": "1.0.0",
-  "description": "Modern Landing Page built with Next.js 14 and Tailwind CSS",
+  "description": "Painel Corporativo — portal de módulos internos de leandrosouza.info",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "sync:lockfile": "sh scripts/sync-lockfile.sh"
+    "lint": "next lint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.6.1",
     "@supabase/supabase-js": "^2.49.8",
-    "libphonenumber-js": "^1.12.9",
     "next": "^16.2.7",
-    "react-phone-number-input": "^3.4.12",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

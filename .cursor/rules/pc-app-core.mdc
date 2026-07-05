@@ -1,0 +1,15 @@
+---
+description: Convenções do pc-app (nextjs-landing) — provedor de auth e Painel Corporativo
+alwaysApply: true
+---
+
+# PC App (Painel Corporativo / nextjs-landing)
+
+- JavaScript + JSX. Sem TypeScript sem pedido explícito.
+- Este repo é o **único** provedor de UI de autenticação do ecossistema. Não duplicar login/cadastro/reset em outras apps.
+- `public.profiles` pertence a este repo. Não criar esta tabela em outros projetos.
+- Migrations SQL em `supabase/migrations/`. Nunca alterar tabelas `bc_*` ou `gym_*`.
+- Auth callback (`/auth/callback`) aceita `next=` com URL absoluta de outros subdomínios `.leandrosouza.info`.
+- Rota raiz `/` é o portal de módulos — editar `lib/modules.js`.
+- Porta local: **3000**.
+- `env_file` no docker-compose: `.env.local` (diferente das outras apps que usam `.env`).

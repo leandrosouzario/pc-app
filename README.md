@@ -1,226 +1,102 @@
-# 🚀 Next.js Landing Page with Tailwind CSS
+# PC App — Painel Corporativo
 
-Uma landing page moderna, responsiva e otimizada construída com **Next.js 14** e **Tailwind CSS**.
+Provedor de autenticação central e portal de módulos do ecossistema `leandrosouza.info`.
 
-![Next.js](https://img.shields.io/badge/Next.js-14-black?style=flat-square&logo=next.js)
-![React](https://img.shields.io/badge/React-18-blue?style=flat-square&logo=react)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.3-06B6D4?style=flat-square&logo=tailwindcss)
-![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)
+**URL de produção:** `https://pc.leandrosouza.info`  
+**Porta local:** 3000
 
----
+> **Nota sobre o nome:** o repositório e diretório ainda se chamam `nextjs-landing` por razões históricas (origem como landing page). Renomeação está pendente. O nome real da aplicação é Painel Corporativo / PC App.
 
-## ✨ Características
+## Stack
 
-- ⚡ **Performance Otimizada** - Next.js 14 com App Router
-- 📱 **Totalmente Responsivo** - Mobile-first design (xs, sm, md, lg, xl)
-- 🎨 **Tailwind CSS** - Estilos utilitários modernos
-- ♿ **Acessível** - Segue padrões WCAG 2.1
-- 🔍 **SEO Friendly** - Metadados otimizados e Open Graph
-- 🚀 **Deploy Ready** - Pronto para Vercel, Netlify ou qualquer host
+Next.js 16 · React 18 · Tailwind · JavaScript · Supabase SSR
 
----
+## Papel no ecossistema
 
-## 📋 Seções Incluídas
+1. **Provedor de autenticação:** login, cadastro, magic link, reset de senha e perfil de usuário para todo o ecossistema.
+2. **Portal de módulos:** painel corporativo com cards de acesso a módulos internos.
 
-1. **Header** - Navegação sticky com menu responsivo
-2. **Hero** - Banner principal com gradiente e CTAs
-3. **Features** - Grid de 6 recursos com ícones (hover effects)
-4. **CTA** - Seção de conversão destacada
-5. **Footer** - Rodapé com links, contato e redes sociais
+Outros apps (gym, balcão) redirecionam para `pc.leandrosouza.info/login` quando precisam de autenticação.
 
----
+## Pré-requisitos
 
-## 🛠️ Tecnologias
+- Docker e Docker Compose
 
-| Tecnologia | Descrição |
-|-----------|-----------|
-| [Next.js 14](https://nextjs.org/) | Framework React moderno |
-| [React 18](https://react.dev/) | Biblioteca de UI |
-| [Tailwind CSS 3.3](https://tailwindcss.com/) | CSS utilitário |
-| [TypeScript](https://www.typescriptlang.org/) | Type safety (opcional) |
-| [ESLint](https://eslint.org/) | Linter de código |
-
----
-
-## 🚀 Quick Start
-
-### Pré-requisitos
-- Node.js 18+
-- npm, yarn ou pnpm
-
-### Instalação
+## Build e execução (Docker)
 
 ```bash
-# Clone o repositório
-git clone https://github.com/leandrosouzario/nextjs-landing.git
-cd nextjs-landing
+cp .env.example .env.local   # preencha as variáveis
+docker compose build --no-cache
+docker compose up -d
+```
 
-# Instale as dependências
+Aplicação disponível em `http://localhost:3000`.
+
+## Variáveis de ambiente
+
+| Variável | Descrição | Exemplo |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | URL canônica desta app | `https://pc.leandrosouza.info` |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do Supabase self-hosted | `https://supabase.leandrosouza.info` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anon do Supabase | `eyJ...` |
+
+## Migrations Supabase
+
+Execute no Supabase Studio → SQL Editor, nesta ordem:
+
+1. `supabase/migrations/001_profiles.sql` — tabela `public.profiles`, trigger, RLS, bucket avatars
+2. `supabase/migrations/002_brazil_locations_schema.sql`
+3. `supabase/migrations/003_seed_brazil_locations.sql`
+4. `supabase/migrations/004_backfill_profile_locations.sql`
+
+## Estrutura
+
+```
+app/
+  layout.jsx
+  page.jsx                    # portal de módulos
+  login/page.jsx              # AuthPanel
+  perfil/page.jsx             # ProfileForm
+  auth/
+    callback/route.js         # troca code por sessão (suporta next= cross-app)
+    redefinir-senha/page.jsx
+components/
+  auth/                       # AuthPanel, ResetPasswordForm
+  profile/                    # ProfileForm, AvatarUpload, ChangePasswordForm, PhoneInput
+  Header.jsx / Footer.jsx
+  ModulePortal.jsx / ModuleCard.jsx
+  ServiceStatus.jsx / Roadmap.jsx
+lib/
+  supabase/                   # client, server, middleware, cookie-options, auth-redirect
+  modules.js                  # MODULES, ROADMAP_ITEMS, SERVICE_STATUS
+  profile.js / password.js / phone.js / countries.js / location*.js
+middleware.js
+supabase/
+  migrations/
+```
+
+## Escopo
+
+- Toda UI de autenticação do ecossistema vive aqui.
+- `public.profiles` é de responsabilidade deste repo.
+- Não duplicar lógica de auth em gym-app, balcao-app ou outras apps.
+
+## Desenvolvimento local (opcional)
+
+Requer Node.js 18+ na máquina:
+
+```bash
 npm install
-
-# Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-Abra [http://localhost:3000](http://localhost:3000) no navegador.
+## Cloudflare Tunnel
 
----
-
-## 📦 Scripts
-
-```bash
-# Desenvolvimento
-npm run dev          # Inicia servidor de desenvolvimento
-
-# Build
-npm run build        # Cria build otimizado
-
-# Produção
-npm start           # Inicia servidor de produção
-
-# Linting
-npm run lint        # Verifica o código com ESLint
+```yaml
+- hostname: pc.leandrosouza.info
+  service: http://192.168.68.245:3000
 ```
 
----
+## Git
 
-## 📁 Estrutura do Projeto
-
-```
-nextjs-landing/
-├── app/
-│   ├── layout.jsx              # Layout raiz
-│   ├── page.jsx                # Página principal
-│   ├── globals.css             # Estilos globais
-│   └── favicon.ico
-├── components/
-│   ├── Header.jsx              # Header com navegação
-│   ├── Hero.jsx                # Seção hero
-│   ├── Features.jsx            # Grid de recursos
-│   ├── CTA.jsx                 # Call-to-action
-│   └── Footer.jsx              # Rodapé
-├── public/                     # Arquivos estáticos
-├── .env.example                # Template de env
-├── .gitignore
-├── .eslintrc.json
-├── .prettierrc
-├── next.config.js
-├── tailwind.config.js
-├── postcss.config.js
-├── tsconfig.json
-├── package.json
-├── SETUP.md                    # Guia de setup
-└── README.md                   # Este arquivo
-```
-
----
-
-## 🎨 Customização
-
-### Cores
-Edite `tailwind.config.js`:
-```js
-theme: {
-  extend: {
-    colors: {
-      primary: '#0066cc',
-      secondary: '#6366f1',
-    },
-  },
-},
-```
-
-### Conteúdo de Componentes
-
-| Componente | Arquivo | Descrição |
-|-----------|---------|-----------|
-| Header | `components/Header.jsx` | Logo, navegação e botão |
-| Hero | `components/Hero.jsx` | Título, subtítulo e CTAs |
-| Features | `components/Features.jsx` | Array de 6 recursos |
-| CTA | `components/CTA.jsx` | Seção de conversão |
-| Footer | `components/Footer.jsx` | Links e contato |
-
----
-
-## 🚀 Deploy
-
-### Vercel (Recomendado)
-
-```bash
-npm install -g vercel
-vercel
-```
-
-### Outras Opções
-
-| Plataforma | Link |
-|-----------|------|
-| Netlify | [netlify.com](https://netlify.com) |
-| AWS Amplify | [aws.amazon.com/amplify](https://aws.amazon.com/amplify/) |
-| Railway | [railway.app](https://railway.app) |
-| Render | [render.com](https://render.com) |
-
----
-
-## 📊 Lighthouse Metrics
-
-- ⚡ Performance: 95+
-- ♿ Accessibility: 95+
-- 📋 Best Practices: 95+
-- 🔍 SEO: 100
-
----
-
-## 🎯 Roadmap
-
-- [ ] Dark mode
-- [ ] Componentes adicionais (testimonials, pricing)
-- [ ] Sistema de tema customizável
-- [ ] Integração com CMS
-- [ ] Multi-idioma (i18n)
-
----
-
-## 🤝 Contribuindo
-
-1. Fork o projeto
-2. Crie uma branch (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
----
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para mais detalhes.
-
----
-
-## 👤 Autor
-
-**Leandro Souza**
-- GitHub: [@leandrosouzario](https://github.com/leandrosouzario)
-
----
-
-## 🆘 Suporte
-
-- 📖 [Documentação SETUP](./SETUP.md)
-- 🐛 [Abra uma Issue](https://github.com/leandrosouzario/nextjs-landing/issues)
-- 📧 [Email](mailto:info@example.com)
-
----
-
-## 🙏 Agradecimentos
-
-- [Vercel](https://vercel.com) - Hospedagem e infraestrutura
-- [Next.js](https://nextjs.org/) - Framework
-- [Tailwind CSS](https://tailwindcss.com/) - CSS Framework
-- [React](https://react.dev/) - Biblioteca UI
-
----
-
-**Desenvolvido com ❤️ usando Next.js + Tailwind CSS**
-
-⭐ Se este projeto foi útil, considere dar uma estrela!
+`git@github.com:leandrosouzario/nextjs-landing.git` · branch `main`

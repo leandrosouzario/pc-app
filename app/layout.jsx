@@ -1,15 +1,15 @@
 import './globals.css'
 
 export const metadata = {
-  title: 'Painel Corporativo — Aplicação Web Full Stack',
+  title: 'Painel Corporativo — Portal Interno',
   description:
-    'Painel corporativo demonstrativo com autenticação, módulos empresariais e arquitetura web moderna.',
-  keywords: 'painel corporativo, nextjs, supabase, full stack, dashboard',
+    'Ambiente centralizado para acesso a sistemas e módulos corporativos internos.',
+  keywords: 'painel corporativo, portal interno, módulos, dashboard',
   authors: [{ name: 'Leandro Souza' }],
   openGraph: {
     title: 'Painel Corporativo',
     description:
-      'Experiência web moderna para centralizar operações e fluxos empresariais.',
+      'Portal corporativo privado para acesso a sistemas e módulos internos.',
     type: 'website',
   },
 }
