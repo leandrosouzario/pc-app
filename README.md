@@ -1,22 +1,23 @@
-# PC App — Painel Corporativo
+# PC App — Painel de Controle
 
-Provedor de autenticação central e portal de módulos do ecossistema `leandrosouza.info`.
+Dashboard de monitoramento do servidor em tempo real.
 
 **URL de produção:** `https://pc.leandrosouza.info`  
-**Porta local:** 3000
-
-> **Nota sobre o nome:** o repositório e diretório ainda se chamam `nextjs-landing` por razões históricas (origem como landing page). Renomeação está pendente. O nome real da aplicação é Painel Corporativo / PC App.
+**Porta local:** 3000  
+**Acesso:** restrito a usuários com `profiles.role = 'admin'`
 
 ## Stack
 
 Next.js 16 · React 18 · Tailwind · JavaScript · Supabase SSR
 
-## Papel no ecossistema
+## O que monitora
 
-1. **Provedor de autenticação:** login, cadastro, magic link, reset de senha e perfil de usuário para todo o ecossistema.
-2. **Portal de módulos:** painel corporativo com cards de acesso a módulos internos.
+- **CPU:** load average (1, 5, 15 min)
+- **Memória:** total, usada e livre
+- **Uptime** do servidor
+- **Docker containers:** nome, imagem, status de cada container
 
-Outros apps (gym, balcão) redirecionam para `pc.leandrosouza.info/login` quando precisam de autenticação.
+Os dados são atualizados automaticamente a cada 10 segundos via polling do cliente.
 
 ## Pré-requisitos
 
@@ -25,7 +26,7 @@ Outros apps (gym, balcão) redirecionam para `pc.leandrosouza.info/login` quando
 ## Build e execução (Docker)
 
 ```bash
-cp .env.example .env.local   # preencha as variáveis
+cp .env.example .env   # preencha as variáveis
 docker compose build --no-cache
 docker compose up -d
 ```
@@ -39,64 +40,40 @@ Aplicação disponível em `http://localhost:3000`.
 | `NEXT_PUBLIC_SITE_URL` | URL canônica desta app | `https://pc.leandrosouza.info` |
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do Supabase self-hosted | `https://supabase.leandrosouza.info` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anon do Supabase | `eyJ...` |
+| `NEXT_PUBLIC_AUTH_LOGIN_URL` | URL de login do provedor central | `https://auth.leandrosouza.info/login` |
+| `NEXT_PUBLIC_AUTH_PROFILE_URL` | URL de perfil do provedor central | `https://auth.leandrosouza.info/perfil` |
 
-## Migrations Supabase
+## Controle de acesso (admin)
 
-Execute no Supabase Studio → SQL Editor, nesta ordem:
+O middleware verifica `profiles.role = 'admin'` após a autenticação. Para promover um usuário:
 
-1. `supabase/migrations/001_profiles.sql` — tabela `public.profiles`, trigger, RLS, bucket avatars
-2. `supabase/migrations/002_brazil_locations_schema.sql`
-3. `supabase/migrations/003_seed_brazil_locations.sql`
-4. `supabase/migrations/004_backfill_profile_locations.sql`
+```sql
+-- Execute no Supabase Studio → SQL Editor
+UPDATE public.profiles SET role = 'admin' WHERE email = 'usuario@exemplo.com';
+```
 
 ## Estrutura
 
 ```
 app/
-  layout.jsx
-  page.jsx                    # portal de módulos
-  login/page.jsx              # AuthPanel
-  perfil/page.jsx             # ProfileForm
-  auth/
-    callback/route.js         # troca code por sessão (suporta next= cross-app)
-    redefinir-senha/page.jsx
+  layout.jsx              # root layout
+  page.jsx                # redirect → /dashboard
+  dashboard/page.jsx      # cards de métricas com auto-refresh
+  api/metrics/route.js    # GET métricas (OS + Docker)
 components/
-  auth/                       # AuthPanel, ResetPasswordForm
-  profile/                    # ProfileForm, AvatarUpload, ChangePasswordForm, PhoneInput
-  Header.jsx / Footer.jsx
-  ModulePortal.jsx / ModuleCard.jsx
-  ServiceStatus.jsx / Roadmap.jsx
+  Header.jsx
 lib/
-  supabase/                   # client, server, middleware, cookie-options, auth-redirect
-  modules.js                  # MODULES, ROADMAP_ITEMS, SERVICE_STATUS
-  profile.js / password.js / phone.js / countries.js / location*.js
+  supabase/               # client, server, middleware, cookie-options
 middleware.js
-supabase/
-  migrations/
-```
-
-## Escopo
-
-- Toda UI de autenticação do ecossistema vive aqui.
-- `public.profiles` é de responsabilidade deste repo.
-- Não duplicar lógica de auth em gym-app, balcao-app ou outras apps.
-
-## Desenvolvimento local (opcional)
-
-Requer Node.js 18+ na máquina:
-
-```bash
-npm install
-npm run dev
 ```
 
 ## Cloudflare Tunnel
 
 ```yaml
 - hostname: pc.leandrosouza.info
-  service: http://192.168.68.245:3000
+  service: http://localhost:3000
 ```
 
 ## Git
 
-`git@github.com:leandrosouzario/nextjs-landing.git` · branch `main`
+`git@github.com:leandrosouzario/pc-app.git` · branch `main`

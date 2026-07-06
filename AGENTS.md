@@ -1,22 +1,16 @@
-# PC App (Painel Corporativo) — Agent Guide
+# PC App — Painel de Controle · Agent Guide
 
-Aplicação em `https://pc.leandrosouza.info` com duplo papel no ecossistema:
+Dashboard de monitoramento do servidor, acessado em `https://pc.leandrosouza.info`.
 
-1. **Provedor de autenticação central** — login, cadastro, magic link, reset de senha, callback OAuth, perfil de usuário
-2. **Painel Corporativo** — portal de módulos internos (maioria ainda placeholder)
+**Acesso restrito:** somente usuários com `profiles.role = 'admin'` entram. Outros são redirecionados para `hub.leandrosouza.info`.
 
-> **Situação de transição:** decidido arquiteturalmente que auth + perfil migrarão futuramente para o hub-app (`hub.leandrosouza.info/login`). Até lá, este repo é o provedor ativo. O Painel Corporativo (módulos) pode ser ressignificado como Painel de Controle/Admin.
+## Escopo
 
-> **Nome do repositório desatualizado:** o diretório e repo ainda se chamam `nextjs-landing`, refletindo a origem como landing page que evoluiu. Renomeação está pendente.
+- Dashboard com métricas em tempo real do servidor: CPU, memória, uptime, containers Docker (`/dashboard`)
+- API interna de métricas (`/api/metrics`) — autenticada + role admin
+- Header session-aware com links para perfil e logout
 
-## Escopo atual
-
-- Auth: login, cadastro, magic link, reset de senha (`/login`, `/auth/redefinir-senha`, `/auth/callback`)
-- Perfil de usuário: nome, avatar, telefone, senha (`/perfil`)
-- Portal de módulos: cards de módulos internos com status (`/`)
-- Supabase: único repo com migrations de `public.profiles` e dados de localização
-
-**Fora de escopo:** lógica de negócio de outras apps (treinos, anúncios), duplicar auth.
+**Fora de escopo:** autenticação própria (login, cadastro, reset), perfil de usuário, lógica de outras apps.
 
 ## Stack
 
@@ -26,65 +20,44 @@ Next.js 16 · React 18 · Tailwind · **JavaScript** (JSX) · Supabase SSR · po
 
 ```
 app/
-  layout.jsx                  # root layout
-  page.jsx                    # portal de módulos (ModulePortal, ServiceStatus, Roadmap)
-  login/page.jsx              # AuthPanel — login/cadastro/magic link
-  perfil/page.jsx             # ProfileForm — dados cadastrais
-  auth/
-    callback/route.js         # troca code por sessão; suporta next= absoluto cross-app
-    redefinir-senha/page.jsx  # ResetPasswordForm
+  layout.jsx              # root layout (fundo escuro)
+  page.jsx                # redirect → /dashboard
+  dashboard/page.jsx      # cards de métricas com polling
+  api/metrics/route.js    # GET métricas OS + Docker (protegido)
 components/
-  auth/
-    AuthPanel.jsx             # tabs: Entrar / Criar conta / Entrar sem senha / Recuperar
-    ResetPasswordForm.jsx
-  profile/
-    ProfileForm.jsx           # nome, avatar, telefone, senha
-    AvatarUpload.jsx
-    ChangePasswordForm.jsx
-    PhoneInput.jsx
-    BrazilLocationSelect.jsx / SearchableCombobox.jsx
-  Header.jsx / Footer.jsx
-  ModulePortal.jsx / ModuleCard.jsx
-  ServiceStatus.jsx / Roadmap.jsx
+  Header.jsx              # session-aware: email, Perfil, Sair
 lib/
+  modules.js              # links de módulos (se houver)
   supabase/
-    client.js / server.js / middleware.js / cookie-options.js / auth-redirect.js
-  modules.js    # MODULES, ROADMAP_ITEMS, SERVICE_STATUS
-  profile.js / password.js / phone.js / countries.js / location*.js
-middleware.js   # updateSession — protege /perfil e /auth/redefinir-senha
-supabase/
-  migrations/   # SQLs de profiles e localização (executar na ordem numérica)
+    client.js / server.js / middleware.js / cookie-options.js
+middleware.js             # updateSession + verificação de role admin
 ```
 
-## Modelo de dados (Supabase — dono)
+## Autenticação e controle de acesso
 
-Este repo é o **dono** da tabela `public.profiles`:
+O middleware em `lib/supabase/middleware.js` faz duas verificações:
 
-| Tabela | Descrição |
-|---|---|
-| `public.profiles` | Perfil de usuário: `display_name`, `avatar_url`, `phone`, `country_code` |
+1. **Sessão:** se não há usuário autenticado → redirect para `AUTH_LOGIN_URL?next=<URL>`.
+2. **Role admin:** lê `profiles.role` do Supabase. Se não for `'admin'` → redirect para `https://hub.leandrosouza.info`.
 
-### Migrations (ordem obrigatória)
-
-```
-001_profiles.sql               # tabela profiles, trigger em auth.users, RLS, bucket avatars
-002_brazil_locations_schema.sql
-003_seed_brazil_locations.sql
-004_backfill_profile_locations.sql
+Para promover um usuário a admin:
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE email = 'usuario@exemplo.com';
 ```
 
-## Autenticação cross-app
+## API de métricas (`GET /api/metrics`)
 
-O callback em `/auth/callback` aceita `next=` com URL absoluta de outros subdomínios de `.leandrosouza.info`, permitindo o fluxo:
+Retorna JSON com:
+- CPU: load average (1, 5, 15 min) e número de CPUs
+- Memória: total, usada e livre (em GB)
+- Uptime do servidor (em horas)
+- Containers Docker: nome, imagem, status e estado (via `/var/run/docker.sock`)
 
+Requer cookie de sessão válido com role `admin`. O container Docker monta o socket:
+```yaml
+volumes:
+  - /var/run/docker.sock:/var/run/docker.sock:ro
 ```
-gym.leandrosouza.info → sem sessão
-  → redirect para pc.leandrosouza.info/login?next=https://gym.leandrosouza.info/dashboard
-  → login OK → /auth/callback?next=https://gym.leandrosouza.info/dashboard
-  → redirect de volta ao gym já autenticado (cookie .leandrosouza.info)
-```
-
-Apps consumidoras configuram: `NEXT_PUBLIC_AUTH_LOGIN_URL=https://pc.leandrosouza.info/login`
 
 ## Variáveis de ambiente
 
@@ -93,16 +66,15 @@ Apps consumidoras configuram: `NEXT_PUBLIC_AUTH_LOGIN_URL=https://pc.leandrosouz
 | `NEXT_PUBLIC_SITE_URL` | Sim | `https://pc.leandrosouza.info` |
 | `NEXT_PUBLIC_SUPABASE_URL` | Sim | URL do Supabase self-hosted |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Sim | Chave anon do Supabase |
-
-Arquivo usado no docker-compose: `.env.local`
+| `NEXT_PUBLIC_AUTH_LOGIN_URL` | Sim | `https://auth.leandrosouza.info/login` |
+| `NEXT_PUBLIC_AUTH_PROFILE_URL` | Sim | `https://auth.leandrosouza.info/perfil` |
 
 ## Convenções de código
 
 - JavaScript + JSX. Sem TypeScript sem pedido explícito.
-- Não duplicar lógica de auth em outras apps — toda UI de login/cadastro vive aqui.
-- Migrations SQL em `supabase/migrations/`. Nunca alterar tabelas `bc_*` ou `gym_*`.
+- Não duplicar lógica de auth — login e perfil vivem no `auth-app`.
 - Imports com alias `@/` (jsconfig.json).
-- Server Components por padrão; `'use client'` em `Header.jsx` e componentes de form.
+- Server Components por padrão; `'use client'` no Header e componentes interativos.
 
 ## Deploy
 
@@ -117,11 +89,12 @@ Cloudflare Tunnel: `pc.leandrosouza.info` → host `:3000`
 
 | App | URL | Relação |
 |---|---|---|
-| Hub | `https://hub.leandrosouza.info` | Catálogo público; lista o PC como app |
-| Gym | `https://gym.leandrosouza.info` | Consumidor de auth; redirect para `/login` |
-| Balcão | `https://balcao.leandrosouza.info` | Consumidor de auth; redirect para `/login` e `/perfil` |
+| Hub | `https://hub.leandrosouza.info` | Não-admins são redirecionados para cá |
+| Auth | `https://auth.leandrosouza.info` | Provedor de auth; perfil do usuário |
+| Gym | `https://gym.leandrosouza.info` | App irmã, mesmo Supabase |
+| Balcão | `https://balcao.leandrosouza.info` | App irmã, mesmo Supabase |
 | Supabase | `https://supabase.leandrosouza.info` | Backend compartilhado |
 
 ## Git
 
-`git@github.com:leandrosouzario/nextjs-landing.git` · branch `main`
+`git@github.com:leandrosouzario/pc-app.git` · branch `main`
