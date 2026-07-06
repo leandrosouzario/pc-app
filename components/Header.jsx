@@ -9,11 +9,7 @@ const AUTH_LOGIN_URL = process.env.NEXT_PUBLIC_AUTH_LOGIN_URL ?? 'https://auth.l
 const AUTH_PROFILE_URL = process.env.NEXT_PUBLIC_AUTH_PROFILE_URL ?? 'https://auth.leandrosouza.info/perfil'
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://pc.leandrosouza.info'
 
-const NAV_LINKS = [
-  { href: '/#modules', label: 'Módulos' },
-  { href: '/#status', label: 'Status' },
-  { href: '/#roadmap', label: 'Roadmap' },
-]
+const NAV_LINKS = []
 
 function buildLoginUrl(pathname) {
   try {
@@ -91,7 +87,7 @@ export default function Header() {
         <div className="flex justify-between items-center h-16">
           <Link href="/" className="flex items-center" onClick={closeMobileMenu}>
             <div className="text-xl sm:text-2xl font-bold text-slate-800">
-              <span className="text-blue-700">Painel</span> Corporativo
+              <span className="text-blue-700">Painel</span> de Controle
             </div>
           </Link>
 

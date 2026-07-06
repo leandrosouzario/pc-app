@@ -1,17 +1,5 @@
-import Header from '@/components/Header'
-import ModulePortal from '@/components/ModulePortal'
-import ServiceStatus from '@/components/ServiceStatus'
-import Roadmap from '@/components/Roadmap'
-import Footer from '@/components/Footer'
+import { redirect } from 'next/navigation'
 
-export default function Home() {
-  return (
-    <main>
-      <Header />
-      <ModulePortal />
-      <ServiceStatus />
-      <Roadmap />
-      <Footer />
-    </main>
-  )
+export default function RootPage() {
+  redirect('/dashboard')
 }
