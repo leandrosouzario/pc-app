@@ -1,46 +1,50 @@
 ---
 name: pc-app
 description: >-
-  Desenvolve o pc-app / nextjs-landing (pc.leandrosouza.info): provedor de
-  auth Supabase, perfil de usuário, portal de módulos corporativos. JavaScript.
+  Desenvolve o pc-app — Painel de Controle do servidor (pc.leandrosouza.info):
+  dashboard de métricas em tempo real, API de métricas, controle de acesso admin. JavaScript.
 ---
 
-# PC App (Painel Corporativo)
+# PC App (Painel de Controle)
 
-## Novo módulo no portal
+## Adicionar ou modificar uma métrica no dashboard
 
-1. Adicionar entrada em `MODULES` em `lib/modules.js`:
-   - `id`, `name`, `shortDescription`, `icon`, `status`, `statusLabel`, `featured`, `href`
-   - Status: `active` | `available` | `coming_soon`
-2. Se tiver link ativo, definir `href` (rota interna ou URL externa)
-3. Conferir `components/ModulePortal.jsx` e `components/ModuleCard.jsx`
+1. Expor o dado na API: `app/api/metrics/route.js`
+   - Adicionar campo no objeto retornado pelo `GET`
+2. Consumir no cliente: `app/dashboard/page.jsx`
+   - Ler o campo em `metrics?.novoGrupo`
+   - Adicionar um `<Card>` com os valores desejados
+   - Usar `<Skeleton />` enquanto o dado é `null`/`undefined`
 
-## Ajuste no fluxo de auth
+## Ajustar estilo do dashboard
 
-- Login/cadastro/magic link/reset: `components/auth/AuthPanel.jsx`
-- Reset de senha: `components/auth/ResetPasswordForm.jsx`
-- Callback cross-app: `app/auth/callback/route.js`
-  - Aceita `next=` com URL absoluta de `*.leandrosouza.info`
-- Rotas protegidas: listar em `lib/supabase/middleware.js` → `protectedPaths`
+- Cards: componente `<Card title="...">` em `app/dashboard/page.jsx`
+- Cores de status: funções `pct()` e `barColor()` (thresholds: 60% amarelo, 85% vermelho)
+- Barra de progresso: componente `<ProgressBar value={n} />`
+- Intervalo de polling: constante `INTERVALS` (sistema: 5 s, containers: 10 s)
 
-## Novo campo no perfil de usuário
+## Alterar o Header
 
-1. Adicionar coluna em `public.profiles` via migration SQL em `supabase/migrations/`
-2. Atualizar `PROFILE_FIELDS` em `lib/profile.js`
-3. Ajustar `components/profile/ProfileForm.jsx`
-4. Atualizar trigger `handle_new_user()` se campo deve ser populado no cadastro
+- Arquivo: `components/Header.jsx`
+- Links de navegação: array `NAV_LINKS` (vazio por padrão — adicionar `{ href, label }` se necessário)
+- Link de perfil: `AUTH_PROFILE_URL` → `auth.leandrosouza.info/perfil`
+- Logout: chama `supabase.auth.signOut()` e redireciona para `/`
 
-## Nova migration Supabase
+## Ajustar controle de acesso
 
-1. Criar `supabase/migrations/<próximo_número>_<descricao>.sql`
-2. Executar no Supabase Studio → SQL Editor na ordem numérica
-3. Documentar no README na seção "Migrations"
+- Arquivo: `lib/supabase/middleware.js`
+- Fluxo: sem sessão → redirect para `AUTH_LOGIN_URL?next=<URL absoluta>`; autenticado mas não admin → redirect para `hub.leandrosouza.info`
+- Verificação de role: lê `profiles.role` via Supabase (`maybeSingle()`)
+- Para promover usuário a admin:
+  ```sql
+  UPDATE public.profiles SET role = 'admin' WHERE email = 'usuario@exemplo.com';
+  ```
 
-## Verificar status dos serviços no portal
+## Deploy
 
-Editar `SERVICE_STATUS` em `lib/modules.js`:
-```js
-{ id: 'novo', name: 'Serviço X', status: 'online' | 'degraded' | 'offline' }
+```bash
+docker compose build --no-cache
+docker compose up -d
 ```
 
 Ver [AGENTS.md](../../AGENTS.md).

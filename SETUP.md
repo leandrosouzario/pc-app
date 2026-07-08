@@ -1,161 +1,59 @@
-# 📚 SETUP - Instruções de Configuração
+# Setup — PC App (Painel de Controle)
 
-## 🚀 Quickstart
+## Pré-requisito
 
-### 1. Clone o repositório
+- Docker e Docker Compose instalados no host
+
+## Configuração
+
 ```bash
-git clone https://github.com/leandrosouzario/nextjs-landing.git
-cd nextjs-landing
+cp .env.example .env
 ```
 
-### 2. Instale as dependências
+Preencha as variáveis no `.env`:
+
+| Variável | Descrição | Exemplo |
+|---|---|---|
+| `NEXT_PUBLIC_SITE_URL` | URL canônica desta app | `https://pc.leandrosouza.info` |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL do Supabase self-hosted | `https://supabase.leandrosouza.info` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Chave anon do Supabase | `eyJ...` |
+| `NEXT_PUBLIC_AUTH_LOGIN_URL` | URL de login do auth-app | `https://auth.leandrosouza.info/login` |
+| `NEXT_PUBLIC_AUTH_PROFILE_URL` | URL de perfil do auth-app | `https://auth.leandrosouza.info/perfil` |
+
+## Build e execução
+
 ```bash
-npm install
-# ou
-yarn install
-# ou
-pnpm install
+docker compose build --no-cache
+docker compose up -d
 ```
 
-### 3. Inicie o servidor de desenvolvimento
-```bash
-npm run dev
-# ou
-yarn dev
-# ou
-pnpm dev
-```
+Aplicação disponível em `http://localhost:3000`.
 
-Abra [http://localhost:3000](http://localhost:3000) no seu navegador para ver a aplicação rodando.
-
----
-
-## 🔧 Configuração
-
-### Variáveis de Ambiente
-Copie o arquivo `.env.example` para `.env.local`:
-```bash
-cp .env.example .env.local
-```
-
-Configure suas variáveis conforme necessário.
-
----
-
-## 📦 Scripts Disponíveis
-
-- **`npm run dev`** - Inicia o servidor de desenvolvimento
-- **`npm run build`** - Cria um build otimizado para produção
-- **`npm start`** - Inicia o servidor de produção
-- **`npm run lint`** - Executa o ESLint para verificar o código
-
----
-
-## 📂 Estrutura do Projeto
+## Estrutura
 
 ```
-nextjs-landing/
-├── app/                    # App Router (Next.js 14)
-│   ├── layout.jsx         # Layout raiz com metadados
-│   ├── page.jsx           # Página principal
-│   └── globals.css        # Estilos globais
-├── components/            # Componentes React
-│   ├── Header.jsx         # Navegação e header
-│   ├── Hero.jsx           # Seção hero principal
-│   ├── Features.jsx       # Grid de recursos
-│   ├── CTA.jsx            # Call-to-action
-│   └── Footer.jsx         # Rodapé
-├── public/                # Arquivos estáticos
-├── .env.example           # Template de variáveis
-├── .gitignore             # Arquivos ignorados pelo git
-├── next.config.js         # Configuração Next.js
-├── tailwind.config.js     # Configuração Tailwind CSS
-├── postcss.config.js      # Configuração PostCSS
-├── tsconfig.json          # Configuração TypeScript
-├── package.json           # Dependências do projeto
-└── README.md              # Documentação principal
+app/
+  layout.jsx              # root layout (fundo escuro)
+  page.jsx                # redirect → /dashboard
+  dashboard/page.jsx      # cards de métricas com polling automático
+  api/metrics/route.js    # GET métricas OS + Docker (requer sessão admin)
+components/
+  Header.jsx              # session-aware: email, Perfil, Sair
+lib/
+  supabase/
+    client.js             # cliente browser
+    server.js             # cliente server-side
+    middleware.js         # updateSession + verificação de role admin
+    cookie-options.js     # opções de cookie cross-subdomínio
+middleware.js             # entry point do Next.js middleware
 ```
 
----
+## Controle de acesso
 
-## 🎨 Customização
+Somente usuários com `profiles.role = 'admin'` acessam o painel.
 
-### Cores
-Edite `tailwind.config.js`:
-```js
-theme: {
-  extend: {
-    colors: {
-      primary: '#0066cc',
-      secondary: '#6366f1',
-    },
-  },
-},
+Para promover um usuário, execute no **Supabase Studio → SQL Editor**:
+
+```sql
+UPDATE public.profiles SET role = 'admin' WHERE email = 'usuario@exemplo.com';
 ```
-
-### Conteúdo
-- **Header**: `components/Header.jsx`
-- **Hero**: `components/Hero.jsx`
-- **Features**: `components/Features.jsx`
-- **CTA**: `components/CTA.jsx`
-- **Footer**: `components/Footer.jsx`
-
----
-
-## 🚀 Deploy
-
-### Vercel (Recomendado)
-```bash
-npm install -g vercel
-vercel
-```
-
-### Outras Plataformas
-- [Netlify](https://netlify.com)
-- [AWS Amplify](https://aws.amazon.com/amplify/)
-- [Heroku](https://heroku.com)
-- [Railway](https://railway.app)
-
----
-
-## 📊 Performance
-
-- ⚡ Next.js 14 com App Router
-- 🎨 Tailwind CSS para estilos
-- ♿ Acessibilidade WCAG 2.1
-- 📱 Mobile-first responsive design
-- 🔍 SEO otimizado
-
----
-
-## 🤝 Contribuindo
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
-
----
-
-## 📝 Licença
-
-Este projeto está sob a licença MIT.
-
----
-
-## 👤 Autor
-
-[leandrosouzario](https://github.com/leandrosouzario)
-
----
-
-## 🆘 Suporte
-
-Se tiver dúvidas ou problemas:
-1. Abra uma [Issue](https://github.com/leandrosouzario/nextjs-landing/issues)
-2. Envie um email para: info@example.com
-
----
-
-**Desenvolvido com ❤️ usando Next.js + Tailwind CSS**
