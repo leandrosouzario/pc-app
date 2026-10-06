@@ -13,9 +13,11 @@ Next.js 16 · React 18 · Tailwind · JavaScript · Supabase SSR
 ## O que monitora
 
 - **CPU:** load average (1, 5, 15 min)
-- **Memória:** total, usada e livre
+- **Memória:** total, usada, livre e swap
+- **Temperatura:** CPU (e NVMe quando disponível)
+- **Disco:** uso do `/` do host
 - **Uptime** do servidor
-- **Docker containers:** nome, imagem, status de cada container
+- **Docker containers:** nome, status e uso de RAM por container
 
 Os dados são atualizados automaticamente a cada 10 segundos via polling do cliente.
 

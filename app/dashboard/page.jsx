@@ -14,6 +14,18 @@ function pct(value) {
   return 'text-red-400'
 }
 
+function tempClass(celsius) {
+  if (celsius == null) return 'text-slate-500'
+  if (celsius < 70) return 'text-emerald-400'
+  if (celsius < 85) return 'text-amber-400'
+  return 'text-red-400'
+}
+
+function formatTemp(celsius) {
+  if (celsius == null) return '—'
+  return `${celsius} °C`
+}
+
 function barColor(value) {
   if (value < 60) return 'bg-emerald-500'
   if (value < 85) return 'bg-amber-500'
@@ -89,8 +101,12 @@ export default function DashboardPage() {
 
   const cpu = metrics?.cpu
   const mem = metrics?.memory
+  const thermal = metrics?.thermal
+  const disk = metrics?.disk
   const server = metrics?.server
   const containers = metrics?.containers
+
+  const cpuTemp = thermal?.cpuC ?? thermal?.maxC
 
   return (
     <div className="min-h-screen bg-slate-950">
@@ -176,6 +192,14 @@ export default function DashboardPage() {
                     <p className="text-sm font-semibold text-slate-200">{formatBytes(mem.free)}</p>
                   </div>
                 </div>
+                <div className="flex items-center justify-between border-t border-slate-800 pt-3">
+                  <span className="text-xs text-slate-500">Swap</span>
+                  <span className="text-sm font-medium text-slate-200">
+                    {mem.swapTotal > 0
+                      ? `${formatBytes(mem.swapUsed)} / ${formatBytes(mem.swapTotal)}`
+                      : '—'}
+                  </span>
+                </div>
               </div>
             )}
           </Card>
@@ -194,10 +218,39 @@ export default function DashboardPage() {
                   ['Hostname', server.hostname],
                   ['Uptime', server.uptime],
                   ['Plataforma', `${server.platform} (${server.arch})`],
+                  [
+                    'Temperatura',
+                    <span key="temp" className={`text-sm font-medium tabular-nums ${tempClass(cpuTemp)}`}>
+                      {formatTemp(cpuTemp)}
+                    </span>,
+                  ],
+                  ...(thermal?.nvmeC != null
+                    ? [
+                        [
+                          'NVMe',
+                          <span
+                            key="nvme"
+                            className={`text-sm font-medium tabular-nums ${tempClass(thermal.nvmeC)}`}
+                          >
+                            {formatTemp(thermal.nvmeC)}
+                          </span>,
+                        ],
+                      ]
+                    : []),
+                  [
+                    'Disco (/)',
+                    disk
+                      ? `${disk.percent}% · ${formatBytes(disk.free)} livres`
+                      : '—',
+                  ],
                 ].map(([label, val]) => (
-                  <div key={label} className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">{label}</span>
-                    <span className="text-sm font-medium text-slate-200">{val}</span>
+                  <div key={label} className="flex items-center justify-between gap-2">
+                    <span className="text-sm text-slate-500 shrink-0">{label}</span>
+                    {typeof val === 'string' ? (
+                      <span className="text-sm font-medium text-slate-200 text-right">{val}</span>
+                    ) : (
+                      val
+                    )}
                   </div>
                 ))}
               </div>
@@ -229,11 +282,20 @@ export default function DashboardPage() {
                       <p className="truncate text-sm font-medium text-slate-200">{c.name}</p>
                       <p className="truncate text-xs text-slate-500">{c.status}</p>
                     </div>
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${stateBadge(c.state)}`}
-                    >
-                      {c.state}
-                    </span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      {c.state === 'running' && c.memory?.usage != null && (
+                        <span className="text-xs tabular-nums text-slate-400">
+                          {c.memory.percent != null
+                            ? `${c.memory.percent}%`
+                            : formatBytes(c.memory.usage)}
+                        </span>
+                      )}
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase ${stateBadge(c.state)}`}
+                      >
+                        {c.state}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
