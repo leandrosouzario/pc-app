@@ -49,14 +49,18 @@ UPDATE public.profiles SET role = 'admin' WHERE email = 'usuario@exemplo.com';
 
 Retorna JSON com:
 - CPU: load average (1, 5, 15 min) e número de CPUs
-- Memória: total, usada e livre (em GB)
-- Uptime do servidor (em horas)
-- Containers Docker: nome, imagem, status e estado (via `/var/run/docker.sock`)
+- Memória: total, usada, livre, swap (`/proc/meminfo`)
+- Temperatura: CPU/NVMe via `/sys/class/thermal` (`thermal.cpuC`, `thermal.nvmeC`, `thermal.maxC`)
+- Disco: uso de `/` do host (`/host` + `statfs`)
+- Servidor: hostname, uptime, platform/arch
+- Containers Docker: nome, imagem, status, estado e RAM (stats API)
 
-Requer cookie de sessão válido com role `admin`. O container Docker monta o socket:
+Requer cookie de sessão válido com role `admin`. Volumes no container:
 ```yaml
 volumes:
   - /var/run/docker.sock:/var/run/docker.sock:ro
+  - /sys/class/thermal:/sys/class/thermal:ro
+  - /:/host:ro
 ```
 
 ## Variáveis de ambiente
